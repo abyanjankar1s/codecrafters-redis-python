@@ -12,8 +12,12 @@ def main():
     conn, addr = server_socket.accept() # wait for client
     #ok
     with conn:
-        conn.recv(1024)
-        conn.send(pong.encode())
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            print(f"{data=}")
+            conn.sendall(b"+PONG\r\n")
 
 
 if __name__ == "__main__":
