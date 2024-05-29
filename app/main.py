@@ -1,36 +1,37 @@
-#Uncomment this to pass the first stage
 import socket
-import re
 import threading
 
+def redis(command):
+    cmd = command.decode("utf-8")
+    if "PING" in cmd:
+        return b"+PONG\r\n"
+    return b""
 
-
-
-def handle_connection(conn, addr):
+def handle_client(connection, address):
     while True:
-        request: bytes = conn.recv(1024)
-        if not request:
-            break
-        data: str = request.decode()
-        if "ping" in data.lower():
-            response = "+PONG\r\n"
-            print(response)
-            conn.send(response.encode())
-    conn.close()
-
+        try:
+            # Read data
+            data = connection.recv(512)
+            if not data:
+                print(f"Connection from {address} closed.")
+                return
+            # Write the same data back
+            connection.sendall(redis(data))
+        except ConnectionResetError:
+            print(f"Connection from {address} reset.")
+            return
 
 def main():
     print("Logs from your program will appear here!")
-    server_socket = socket.create_server(("localhost", 6379))
-    while True:
-        client_socket, client_address = server_socket.accept()
-        print(f"Received a connection from {client_address}")
-        handle_connection(client_socket, client_address)
-        threading.Thread(
-            target=handle_connection, args=[client_socket, client_address]
-        ).start()
-        # handle_connection(client_socket, client_address)
-
+    with socket.create_server(("localhost", 6379), reuse_port=True) as server_socket:
+        while True:
+            # Wait for client
+            connection, address = server_socket.accept()
+            print(f"Accepted connection from {address}")
+            client_thread = threading.Thread(
+                target=handle_client, args=(connection, address)
+            )
+            client_thread.start()
 
 if __name__ == "__main__":
     main()
