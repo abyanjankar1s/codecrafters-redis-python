@@ -7,13 +7,13 @@ def main():
     print("Logs from your program will appear here!")
 
     # Uncomment this to pass the first stage
-    
+    pong = "+PONG\r\n" 
     server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
-    server_socket.accept() # wait for client
-    (conn, address) = server_socket.accept() 
-    while True:
-        with conn:
-            conn.send(b"+PONG\r\n")
+    conn, addr = server_socket.accept() # wait for client
+    
+    with conn:
+        conn.recv(1024)
+        conn.send(pong.encode)
 
 
 if __name__ == "__main__":
